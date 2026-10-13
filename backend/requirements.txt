@@ -1,0 +1,7 @@
+flask
+python-dotenv
+supabase
+requests
+pydantic
+flask-cors
+pytest
