@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portable Pantry</title>
+  <style>
+* { box-sizing: border-box; }
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  color: #222;
+  background: #fff;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #ccc;
+}
+
+.nav h1 { font-size: 1.3rem; margin: 0; }
+.nav .search { flex: 1; display: flex; gap: 8px; min-width: 200px; }
+.nav .search input { flex: 1; }
+.nav nav a { margin-left: 12px; }
+
+main {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.panel {
+  border: 1px solid #ccc;
+  padding: 16px;
+}
+
+.panel h2 { margin-top: 0; font-size: 1.1rem; }
+
+.row { display: flex; gap: 8px; margin-top: 8px; }
+.row input { flex: 1; }
+
+input, select, button { font-size: 1rem; padding: 6px 8px; }
+button { cursor: pointer; }
+
+#ingredientList { list-style: none; padding: 0; margin: 12px 0 0; }
+#ingredientList li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid #eee;
+}
+#ingredientList li span { flex: 1; }
+
+fieldset { margin: 0 0 12px; border: 1px solid #ddd; }
+.options { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.options label { display: flex; align-items: center; gap: 4px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; }
+
+#status { min-height: 1.2em; }
+#status.error { color: #b00020; }
+
+.recipe {
+  border: 1px solid #ddd;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.recipe h3 { margin: 0 0 4px; }
+.recipe p { margin: 4px 0; }
+
+#regenerateBtn { margin-top: 8px; }
+</style>
+</head>
+<body>
+
+  <header class="nav">
+    <h1>Portable Pantry</h1>
+    <div class="search">
+      <input type="text" id="searchInput" placeholder="Search recipes by name">
+      <button id="searchBtn">Search</button>
+    </div>
+    <nav>
+      <a href="login.html">Log in</a>
+      <a href="signup.html">Sign up</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="panel" id="ingredientsPanel">
+      <h2>Your ingredients</h2>
+      <div class="row">
+        <input type="text" id="ingredientInput" placeholder="e.g. eggs">
+        <button id="addIngredientBtn">Add</button>
+      </div>
+      <ul id="ingredientList"></ul>
+      <p id="ingredientEmpty">No ingredients yet. Add at least one to generate recipes.</p>
+    </section>
+
+    <section class="panel" id="filtersPanel">
+      <h2>Filters</h2>
+
+      <fieldset>
+        <legend>Allergies</legend>
+        <div id="allergyOptions" class="options"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Dietary restrictions</legend>
+        <div id="dietOptions" class="options"></div>
+      </fieldset>
+
+      <div class="grid">
+        <label>Max cook time (minutes)
+          <input type="number" id="cookTime" min="1">
+        </label>
+
+        <label>Cook method
+          <select id="cookMethod"></select>
+        </label>
+
+        <label>Meal type
+          <select id="mealType"></select>
+        </label>
+
+        <label>Food category
+          <select id="foodCategory"></select>
+        </label>
+
+        <label>Cuisine
+          <select id="cuisine"></select>
+        </label>
+
+        <label>Flavor
+          <select id="flavor"></select>
+        </label>
+
+        <label>Spice level (1 to 5)
+          <select id="spiceLevel"></select>
+        </label>
+
+        <label>Max difficulty (1 to 4)
+          <select id="difficulty"></select>
+        </label>
+
+        <label>Min calories
+          <input type="number" id="minCalories" min="0">
+        </label>
+
+        <label>Max calories
+          <input type="number" id="maxCalories" min="0">
+        </label>
+
+        <label>Servings
+          <input type="number" id="servings" min="1" value="2">
+        </label>
+      </div>
+
+      <div class="row">
+        <button id="generateBtn">Generate recipes</button>
+        <button id="clearFiltersBtn" type="button">Clear filters</button>
+      </div>
+    </section>
+
+    <section class="panel" id="resultsPanel">
+      <h2>Recipes</h2>
+      <p id="status" role="status"></p>
+      <div id="results"></div>
+      <button id="regenerateBtn" hidden>Regenerate</button>
+    </section>
+  </main>
+
+  <script>
+// ---- Settings ----
+// Address of the Flask backend. Change this if your backend runs elsewhere.
+const API_URL = "http://localhost:5000";
+
+// ---- Allowed filter values (keep these the same as the SRS and the Ollama prompt) ----
+const OPTIONS = {
+  allergies: ["Peanuts", "Tree nuts", "Dairy", "Eggs", "Wheat", "Soy", "Fish", "Shellfish"],
+  diets: ["Vegetarian", "Vegan", "Gluten-free", "Dairy-free", "Halal", "Kosher"],
+  cookMethod: ["Baking", "Frying", "Steaming", "Grilling", "Boiling", "No-cook"],
+  mealType: ["Breakfast", "Lunch", "Dinner", "Snack", "Dessert"],
+  foodCategory: ["Soup", "Salad", "Pasta", "Sandwich", "Casserole", "Stir-fry"],
+  cuisine: ["American", "Chinese", "Indian", "Italian", "Japanese", "Mexican", "Other"],
+  flavor: ["Sweet", "Savory", "Spicy", "Sour", "Creamy", "Crunchy"],
+  spiceLevel: ["1", "2", "3", "4", "5"],
+  difficulty: ["1", "2", "3", "4"]
+};
+
+// ---- State (guests: kept only while the page is open) ----
+let ingredients = [];
+let lastQuery = null;
+
+// ---- Page elements ----
+const $ = (id) => document.getElementById(id);
+
+// ---- Build the filter controls ----
+function fillCheckboxes(containerId, values, name) {
+  $(containerId).innerHTML = values
+    .map((v) => `<label><input type="checkbox" name="${name}" value="${v}"> ${v}</label>`)
+    .join("");
+}
+
+function fillSelect(id, values) {
+  $(id).innerHTML =
+    `<option value="">Any</option>` +
+    values.map((v) => `<option value="${v}">${v}</option>`).join("");
+}
+
+function buildFilters() {
+  fillCheckboxes("allergyOptions", OPTIONS.allergies, "allergy");
+  fillCheckboxes("dietOptions", OPTIONS.diets, "diet");
+  fillSelect("cookMethod", OPTIONS.cookMethod);
+  fillSelect("mealType", OPTIONS.mealType);
+  fillSelect("foodCategory", OPTIONS.foodCategory);
+  fillSelect("cuisine", OPTIONS.cuisine);
+  fillSelect("flavor", OPTIONS.flavor);
+  fillSelect("spiceLevel", OPTIONS.spiceLevel);
+  fillSelect("difficulty", OPTIONS.difficulty);
+}
+
+// ---- Ingredients ----
+function renderIngredients() {
+  $("ingredientList").innerHTML = ingredients
+    .map(
+      (name, i) => `
+      <li>
+        <span>${escapeHtml(name)}</span>
+        <button type="button" data-edit="${i}">Edit</button>
+        <button type="button" data-remove="${i}">Remove</button>
+      </li>`
+    )
+    .join("");
+  $("ingredientEmpty").hidden = ingredients.length > 0;
+}
+
+function addIngredient() {
+  const value = $("ingredientInput").value.trim();
+  if (!value) return;
+  const exists = ingredients.some((x) => x.toLowerCase() === value.toLowerCase());
+  if (!exists) ingredients.push(value);
+  $("ingredientInput").value = "";
+  $("ingredientInput").focus();
+  renderIngredients();
+}
+
+function handleIngredientClick(event) {
+  const edit = event.target.dataset.edit;
+  const remove = event.target.dataset.remove;
+  if (edit !== undefined) {
+    const updated = prompt("Edit ingredient:", ingredients[edit]);
+    if (updated && updated.trim()) ingredients[edit] = updated.trim();
+  }
+  if (remove !== undefined) {
+    ingredients.splice(remove, 1);
+  }
+  renderIngredients();
+}
+
+// ---- Filters ----
+function checkedValues(name) {
+  return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map((c) => c.value);
+}
+
+function numberOrNull(id) {
+  const v = $(id).value;
+  return v === "" ? null : Number(v);
+}
+
+function collectFilters() {
+  return {
+    allergies: checkedValues("allergy"),
+    dietaryRestrictions: checkedValues("diet"),
+    maxCookTime: numberOrNull("cookTime"),
+    cookMethod: $("cookMethod").value || null,
+    mealType: $("mealType").value || null,
+    foodCategory: $("foodCategory").value || null,
+    cuisine: $("cuisine").value || null,
+    flavor: $("flavor").value || null,
+    spiceLevel: numberOrNull("spiceLevel"),
+    maxDifficulty: numberOrNull("difficulty"),
+    minCalories: numberOrNull("minCalories"),
+    maxCalories: numberOrNull("maxCalories")
+  };
+}
+
+function clearFilters() {
+  document.querySelectorAll("#filtersPanel input[type=checkbox]").forEach((c) => (c.checked = false));
+  document.querySelectorAll("#filtersPanel select").forEach((s) => (s.value = ""));
+  ["cookTime", "minCalories", "maxCalories"].forEach((id) => ($(id).value = ""));
+}
+
+// ---- Generate, regenerate, search ----
+function setStatus(message, isError = false) {
+  $("status").textContent = message;
+  $("status").className = isError ? "error" : "";
+}
+
+async function postJson(path, body) {
+  const response = await fetch(API_URL + path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) throw new Error("The server returned an error (" + response.status + ").");
+  return response.json();
+}
+
+async function generate(query) {
+  if (query.ingredients.length === 0) {
+    setStatus("Add at least one ingredient before generating recipes.", true);
+    return;
+  }
+  setStatus("Generating recipes. This can take a few seconds...");
+  $("generateBtn").disabled = true;
+  $("regenerateBtn").disabled = true;
+  try {
+    const data = await postJson("/api/recipes/generate", query);
+    lastQuery = query;
+    showRecipes(data.recipes || []);
+  } catch (err) {
+    setStatus("Could not generate recipes. Check that the backend and Ollama are running. " + err.message, true);
+  } finally {
+    $("generateBtn").disabled = false;
+    $("regenerateBtn").disabled = false;
+  }
+}
+
+function onGenerate() {
+  generate({
+    ingredients: [...ingredients],
+    filters: collectFilters(),
+    servings: numberOrNull("servings") || 2,
+    exclude: []
+  });
+}
+
+function onRegenerate() {
+  if (!lastQuery) return;
+  // Same criteria, but ask for different recipes than the ones already shown.
+  const shown = [...document.querySelectorAll(".recipe h3")].map((h) => h.textContent);
+  generate({ ...lastQuery, exclude: shown });
+}
+
+async function onSearch() {
+  const name = $("searchInput").value.trim();
+  if (!name) return;
+  setStatus("Searching...");
+  try {
+    const response = await fetch(API_URL + "/api/recipes/search?name=" + encodeURIComponent(name));
+    if (!response.ok) throw new Error("The server returned an error (" + response.status + ").");
+    const data = await response.json();
+    showRecipes(data.recipes || [], false);
+  } catch (err) {
+    setStatus("Search failed. " + err.message, true);
+  }
+}
+
+// ---- Results ----
+function showRecipes(recipes, allowRegenerate = true) {
+  $("regenerateBtn").hidden = !(allowRegenerate && recipes.length > 0);
+  if (recipes.length === 0) {
+    $("results").innerHTML = "";
+    setStatus("No recipes found. Try changing your ingredients or filters.");
+    return;
+  }
+  setStatus("");
+  $("results").innerHTML = recipes
+    .map(
+      (r) => `
+      <article class="recipe">
+        <h3>${escapeHtml(r.title || "Untitled recipe")}</h3>
+        <p>${escapeHtml(r.description || "")}</p>
+        <p>
+          ${r.cookTime ? "Cook time: " + escapeHtml(String(r.cookTime)) + " min. " : ""}
+          ${r.calories ? "About " + escapeHtml(String(r.calories)) + " calories (estimate). " : ""}
+          ${r.difficulty ? "Difficulty: " + escapeHtml(String(r.difficulty)) + " of 4." : ""}
+        </p>
+        ${r.id ? `<a href="recipe.html?id=${encodeURIComponent(r.id)}">View recipe</a>` : ""}
+      </article>`
+    )
+    .join("");
+}
+
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ---- Wire everything up ----
+buildFilters();
+renderIngredients();
+
+$("addIngredientBtn").addEventListener("click", addIngredient);
+$("ingredientInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") addIngredient();
+});
+$("ingredientList").addEventListener("click", handleIngredientClick);
+$("generateBtn").addEventListener("click", onGenerate);
+$("regenerateBtn").addEventListener("click", onRegenerate);
+$("clearFiltersBtn").addEventListener("click", clearFilters);
+$("searchBtn").addEventListener("click", onSearch);
+$("searchInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") onSearch();
+});
+</script>
+</body>
+</html>
