@@ -16,10 +16,10 @@ def create_app():
     if missing:
         print("Warning: missing settings in .env:", ", ".join(missing))
 
-    app.register_blueprint(auth_bp, url_prefix="/api/auth")
-    app.register_blueprint(recipes_bp, url_prefix= "api/recipes")
-    app.register_blueprint(pantry_bp, url_prefix="api/pantry")
-    app.register_blueprint(profile_bp, url_prefix="api/profile")
+    # app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(recipes_bp, url_prefix= "/api/recipes")
+    # app.register_blueprint(pantry_bp, url_prefix="api/pantry")
+    # app.register_blueprint(profile_bp, url_prefix="api/profile")
 
     @app.route("/")
     def home():
