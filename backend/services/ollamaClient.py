@@ -1,4 +1,5 @@
 
+import json
 import uuid
 
 import requests
@@ -38,21 +39,17 @@ class StepOut(_Base):
 
 
 class RecipeOut(_Base):
+    # Only the fields the Recipe class keeps. Every extra field is more text
+    # for the model to write, which makes generation slower.
     title: str
     description: str
-    prep_time: int = Field(description="Minutes")
-    cook_time: int = Field(description="Minutes")
-    difficulty: int = Field(ge=1, le=4)
-    calories: int = Field(description="Estimated calories per serving")
-    spice_level: int = Field(ge=1, le=5)
-    servings: int
-    cuisine: str = Field(json_schema_extra={"enum": CUISINES})
-    meal_type: str = Field(json_schema_extra={"enum": MEAL_TYPES})
-    cook_method: str = Field(json_schema_extra={"enum": COOK_METHODS})
     food_category: str = Field(json_schema_extra={"enum": FOOD_CATEGORIES})
-    flavor: str = Field(json_schema_extra={"enum": FLAVORS})
-    ingredients: list[IngredientOut]
-    steps: list[StepOut]
+    servings: int
+    calories: int = Field(description="Estimated calories per serving")
+    difficulty: int = Field(ge=1, le=4)
+    spice_level: int = Field(ge=1, le=5)
+    ingredients: list[IngredientOut] = Field(min_length=1)  # empty lists fail validation and retry
+    steps: list[StepOut] = Field(min_length=1)
 
 
 class RecipeBatch(_Base):
@@ -72,11 +69,21 @@ class OllamaClient:
         "Respond only with JSON that matches the requested schema."
     )
 
-    def __init__(self, base_url=None, model=None, timeout=120, num_recipes=3):
+    # Ollama sends the reply a few words at a time (streaming), so this limit is
+    # the longest wait for the NEXT piece, not for the whole reply. Loading the
+    # model into memory before the first word can take a while on a laptop.
+    CONNECT_TIMEOUT = 5
+    READ_TIMEOUT = 180
+    # Keep the model loaded between requests so later requests start faster.
+    KEEP_ALIVE = "30m"
+    # Upper limit on generated tokens, so a confused model can't run forever.
+    MAX_TOKENS = 3000
+
+    def __init__(self, base_url=None, model=None, timeout=READ_TIMEOUT, num_recipes=None):
         self.base_url = (base_url or Config.OLLAMA_URL).rstrip("/")
         self.model = model or Config.OLLAMA_MODEL
         self.timeout = timeout
-        self.num_recipes = num_recipes
+        self.num_recipes = num_recipes or Config.OLLAMA_RECIPE_COUNT
 
     # ------------------------------------------------------------------
     # Prompt
@@ -109,6 +116,8 @@ class OllamaClient:
             "You may also assume common staples such as salt, pepper, oil, and water.",
             f"Scale every recipe to {servings} servings.",
             "Estimate calories per serving.",
+            "Keep it short: a one-sentence description, at most 10 ingredients,",
+            "and at most 6 steps of one or two sentences each.",
             "",
             "Requirements:",
         ]
@@ -170,23 +179,24 @@ class OllamaClient:
                 {"role": "user", "content": prompt},
             ],
             "format": RecipeBatch.model_json_schema(by_alias=True),
-            "stream": False,
-            "options": {"temperature": temperature},
+            "stream": True,
+            "keep_alive": self.KEEP_ALIVE,
+            "options": {"temperature": temperature, "num_predict": self.MAX_TOKENS},
         }
 
         last_problem = "unknown problem"
         for _ in range(attempts):
             try:
-                response = requests.post(
-                    f"{self.base_url}/api/chat", json=payload, timeout=self.timeout
-                )
-                response.raise_for_status()
+                content = self._stream_reply(payload)
             except requests.exceptions.ConnectionError:
                 raise OllamaError(
                     f"Could not connect to Ollama at {self.base_url}. Is it running?"
                 )
             except requests.exceptions.Timeout:
-                raise OllamaError("Ollama took too long to respond.")
+                raise OllamaError(
+                    f"Ollama stopped responding for {self.timeout} seconds. "
+                    "Check that it is still running, or try a smaller model such as llama3.2."
+                )
             except requests.exceptions.HTTPError as err:
                 raise OllamaError(
                     f"Ollama returned an error ({err}). "
@@ -194,7 +204,6 @@ class OllamaClient:
                 )
 
             try:
-                content = response.json()["message"]["content"]
                 batch = RecipeBatch.model_validate_json(content)
             except (KeyError, ValueError, ValidationError) as err:
                 last_problem = str(err)
@@ -208,6 +217,31 @@ class OllamaClient:
             return recipes
 
         raise OllamaError("The model returned invalid recipe data: " + last_problem)
+
+    def _stream_reply(self, payload):
+        """Send the request and join the streamed pieces into the full reply text.
+        Each line Ollama sends is JSON like {"message": {"content": "..."}, "done": false}."""
+        pieces = []
+        with requests.post(
+            f"{self.base_url}/api/chat",
+            json=payload,
+            stream=True,
+            timeout=(self.CONNECT_TIMEOUT, self.timeout),
+        ) as response:
+            response.raise_for_status()
+            for line in response.iter_lines():
+                if not line:
+                    continue
+                try:
+                    chunk = json.loads(line)
+                except ValueError:
+                    continue
+                if chunk.get("error"):
+                    raise OllamaError("Ollama reported an error: " + str(chunk["error"]))
+                pieces.append((chunk.get("message") or {}).get("content", ""))
+                if chunk.get("done"):
+                    break
+        return "".join(pieces)
 
     # ------------------------------------------------------------------
     # Convenience

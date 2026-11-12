@@ -11,6 +11,8 @@ class Config:
 
     OLLAMA_URL = os.getenv("OLLAMA_URL","http://localhost:11434")
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1")
+    # How many recipes one Generate request asks for. Fewer is faster.
+    OLLAMA_RECIPE_COUNT = int(os.getenv("OLLAMA_RECIPE_COUNT", 3))
 
     MEALDB_URL = os.getenv("MEALDB_URL", "https://www.themealdb.com/api/json/v1")
     MEALDB_API_KEY = os.getenv("MEALDB_API_KEY", "1")  # "1" is TheMealDB's free test key

@@ -36,9 +36,15 @@ class RecipeQuery {
 class RecipeService {
   #api;
   constructor(api) { this.#api = api; }
-  async generate(query) { return (await this.#api.post("/api/recipes/generate", query)).recipes ?? []; }
+  // A local AI model can take several minutes, so Generate waits up to 10.
+  async generate(query) {
+    return (await this.#api.post("/api/recipes/generate", query, { timeoutMs: 600000 })).recipes ?? [];
+  }
   async search(ingredients) {
     return (await this.#api.get("/api/recipes/search", { ingredients: ingredients.join(",") })).recipes ?? [];
+  }
+  async refine(recipeIds, ingredients, filters) {
+    return (await this.#api.post("/api/recipes/refine", { recipeIds, ingredients, filters })).recipes ?? [];
   }
   // ASSUMPTION: this route does not exist yet in the backend.
   async recommended() { return (await this.#api.get("/api/recipes/recommended")).recipes ?? []; }
@@ -227,6 +233,67 @@ class FilterPanel {
   }
 }
 
+/** Filters shown above search results, like a shopping site: search first, then narrow down. */
+class RefinePanel {
+  #els; #onChange;
+
+  constructor(els, onChange) {
+    this.#els = els;
+    this.#onChange = onChange;
+    this.#fillChecks(els.allergies, OPTIONS.allergies, "refineAllergy");
+    this.#fillChecks(els.diets, OPTIONS.diets, "refineDiet");
+    els.root.addEventListener("change", () => this.#onChange());
+    els.clear.addEventListener("click", () => { this.reset(); this.#onChange(); });
+  }
+
+  #fillChecks(el, values, name) {
+    el.innerHTML = values
+      .map((v) => `<label><input type="checkbox" name="${name}" value="${Html.escape(v)}"><span>${Html.escape(v)}</span></label>`)
+      .join("");
+  }
+  #checked(name) {
+    return [...this.#els.root.querySelectorAll(`input[name="${name}"]:checked`)].map((c) => c.value);
+  }
+
+  /** Show the panel for a new set of search results. Categories come from the results, with counts. */
+  show(recipes) {
+    const counts = new Map();
+    recipes.forEach((r) => { if (r.foodCategory) counts.set(r.foodCategory, (counts.get(r.foodCategory) || 0) + 1); });
+    const e = Html.escape;
+    this.#els.categories.innerHTML = [...counts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([name, n]) => `<label><input type="checkbox" name="refineCategory" value="${e(name)}"><span>${e(name)} (${n})</span></label>`)
+      .join("");
+    this.reset();
+    this.#els.root.hidden = false;
+  }
+  hide() { this.#els.root.hidden = true; }
+
+  reset() {
+    this.#els.root.querySelectorAll("input[type=checkbox]").forEach((c) => (c.checked = false));
+    this.#els.missing.value = "";
+  }
+
+  get isEmpty() {
+    const f = this.read();
+    return !f.categories.length && !f.allergies.length && !f.dietaryRestrictions.length && f.maxMissing === null;
+  }
+
+  read() {
+    const missing = this.#els.missing.value;
+    return {
+      categories: this.#checked("refineCategory"),
+      allergies: this.#checked("refineAllergy"),
+      dietaryRestrictions: this.#checked("refineDiet"),
+      maxMissing: missing === "" ? null : Number(missing)
+    };
+  }
+
+  count(shown, total) {
+    this.#els.count.textContent = shown === total ? `${total} recipes` : `Showing ${shown} of ${total} recipes`;
+  }
+}
+
 /** Status line + recipe grid + regenerate button. */
 class ResultsView {
   #els;
@@ -237,11 +304,11 @@ class ResultsView {
     this.#els.status.className = isError ? "error" : "";
     this.#els.status.hidden = !message;
   }
-  show(recipes, { canRegenerate = true } = {}) {
+  show(recipes, { canRegenerate = true, emptyMessage = "No recipes found. Try changing your ingredients or filters." } = {}) {
     this.#els.regenerate.hidden = !(canRegenerate && recipes.length > 0);
     if (!recipes.length) {
       this.#els.grid.innerHTML = "";
-      this.status("No recipes found. Try changing your ingredients or filters.");
+      this.status(emptyMessage);
       return;
     }
     this.status("");
@@ -378,6 +445,12 @@ class PantryApp {
     status: $("status"), grid: $("results"), regenerate: $("regenerateBtn"), generate: $("generateBtn")
   });
   #menu = new MenuController($("menuBtn"), $("menu"), () => { Session.logOut(); location.reload(); });
+  #refine = new RefinePanel({
+    root: $("refine"), categories: $("refineCategories"), allergies: $("refineAllergies"), diets: $("refineDiets"),
+    missing: $("refineMissing"), clear: $("refineClear"), count: $("refineCount")
+  }, () => this.#refineSearch());
+  #searchResults = [];     // everything the last search returned, before filters
+  #searchIngredients = [];
   #lastQuery = null;
   #busy = false;
   #requestId = 0; // only the newest request may update the screen
@@ -440,9 +513,10 @@ class PantryApp {
     if (problem) return this.#results.status(problem, true);
 
     const id = ++this.#requestId;
+    this.#refine.hide();
     this.#busy = true;
     this.#results.setBusy(true);
-    this.#results.status("Generating recipes. This can take a few seconds...");
+    this.#results.status("Generating recipes with AI. This can take a minute or two...");
     try {
       const recipes = await this.#recipes.generate(query);
       if (id !== this.#requestId) return;
@@ -466,12 +540,38 @@ class PantryApp {
     const ingredients = fromList ?? (typed.length ? typed : this.#ingredients.items);
     if (!ingredients.length) return this.#results.status("Add or type at least one ingredient to search for.", true);
     const id = ++this.#requestId;
+    this.#refine.hide();
     this.#results.status("Searching...");
     try {
       const recipes = await this.#recipes.search(ingredients);
-      if (id === this.#requestId) this.#results.show(recipes, { canRegenerate: false });
+      if (id !== this.#requestId) return;
+      this.#searchResults = recipes;
+      this.#searchIngredients = ingredients;
+      this.#results.show(recipes, { canRegenerate: false });
+      if (recipes.length) {
+        this.#refine.show(recipes);
+        this.#refine.count(recipes.length, recipes.length);
+      }
     } catch (err) {
       if (id === this.#requestId) this.#results.status(this.#explain(err, "Search failed."), true);
+    }
+  }
+
+  /** Re-filter the last search results on the server whenever a result filter changes. */
+  async #refineSearch() {
+    const all = this.#searchResults;
+    const id = ++this.#requestId;
+    if (this.#refine.isEmpty) {
+      this.#results.show(all, { canRegenerate: false });
+      return this.#refine.count(all.length, all.length);
+    }
+    try {
+      const recipes = await this.#recipes.refine(all.map((r) => r.id), this.#searchIngredients, this.#refine.read());
+      if (id !== this.#requestId) return;
+      this.#results.show(recipes, { canRegenerate: false, emptyMessage: "No recipes match these filters. Try clearing some." });
+      this.#refine.count(recipes.length, all.length);
+    } catch (err) {
+      if (id === this.#requestId) this.#results.status(this.#explain(err, "Could not filter the results."), true);
     }
   }
 }

@@ -117,3 +117,13 @@ input[type=email]:focus, input[type=password]:focus { border-color:var(--brand);
 .auth-links .ghost { width:100%; }
 .auth-links .guest { background:none; border:0; color:var(--ink); text-decoration:underline; font-weight:600; padding:4px; }
 .auth-links .guest:hover { background:none; color:var(--brand); }
+/* Filters shown above search results */
+.refine { margin-bottom:16px; padding:14px 16px; }
+.refine-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.refine-count { color:var(--muted); font-size:.9rem; }
+.refine-group { display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap; }
+.refine-label { font-weight:700; font-size:.85rem; color:var(--muted); min-width:72px; }
+.refine-group .options { flex:1; }
+.refine-select { width:auto; flex:1; min-width:220px; max-width:360px; }
+button.link { background:none; border:0; color:var(--brand); padding:0; margin-left:auto; text-decoration:underline; font-weight:600; }
+button.link:hover { background:none; color:var(--brand-dark); }

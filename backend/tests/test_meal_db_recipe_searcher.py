@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 import pytest
 
 from factories.api_factory import APIFactory
+from factories.filter_factory import FilterFactory
 from models.ingredient import Ingredient
 from repositories.recipe_repository import RecipeRepository
 from services.recipe_service import RecipeService
@@ -93,7 +94,7 @@ def test_network_error_becomes_recipe_search_error(monkeypatch: pytest.MonkeyPat
 
 
 def test_service_saves_results_and_scales(searcher: MealDbRecipeSearcher) -> None:
-    service = RecipeService(APIFactory({}), RecipeRepository())
+    service = RecipeService(APIFactory({}), FilterFactory(), RecipeRepository())
     service._searcher = searcher
     recipe = service.search_recipes(names("eggs"))[0]
     assert service.get_recipe(recipe.recipe_id) is recipe

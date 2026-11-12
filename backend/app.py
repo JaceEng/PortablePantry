@@ -4,6 +4,7 @@ from flask_cors import CORS
 from config import Config
 # from routes.auth import auth_bp
 from factories.api_factory import APIFactory
+from factories.filter_factory import FilterFactory
 from repositories.recipe_repository import RecipeRepository
 from routes.recipes import RecipesController
 from services.recipe_service import RecipeService
@@ -23,7 +24,7 @@ class Application:
         # Build each object once and pass it in through the constructor.
         recipe_repository = RecipeRepository()
         api_factory = APIFactory({"MEALDB_URL": Config.MEALDB_URL, "MEALDB_API_KEY": Config.MEALDB_API_KEY})
-        recipe_service = RecipeService(api_factory, recipe_repository)
+        recipe_service = RecipeService(api_factory, FilterFactory(), recipe_repository)
         recipes_controller = RecipesController(recipe_service)
 
         self.app.register_blueprint(recipes_controller.blueprint, url_prefix="/api/recipes")
