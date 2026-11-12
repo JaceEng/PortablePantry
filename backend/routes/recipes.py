@@ -114,6 +114,7 @@ class RecipesController:
             "title": recipe.title,
             "description": recipe.description,
             "foodCategory": recipe.category,
+            "imageUrl": recipe.image_url,
             "source": recipe.source,
             "servings": recipe.servings,
             "calories": recipe.calories,

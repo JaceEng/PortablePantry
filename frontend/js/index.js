@@ -64,9 +64,14 @@ class RecipeCard {
 
   html() {
     const r = this.#r, e = Html.escape;
+    const label = e(r.cuisine || r.mealType || r.foodCategory || "Recipe");
+    // Searched recipes (TheMealDB) have a photo; AI-generated ones get the colored band.
+    const top = r.imageUrl
+      ? `<div class="recipe-photo"><img src="${e(r.imageUrl)}" alt="" loading="lazy"><span>${label}</span></div>`
+      : `<div class="recipe-top">${label}</div>`;
     return `
       <article class="recipe">
-        <div class="recipe-top">${e(r.cuisine || r.mealType || r.foodCategory || "Recipe")}</div>
+        ${top}
         <div class="recipe-body">
           <h3>${e(r.title || "Untitled recipe")}</h3>
           <p class="desc">${e(r.description)}</p>

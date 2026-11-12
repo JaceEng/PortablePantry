@@ -56,5 +56,6 @@ class RecipeService:
             Ingredient(i.ingredient_id, i.name, i.category, i.quantity * factor, i.unit)
             for i in recipe.ingredients
         ]
-        return Recipe(recipe.recipe_id, recipe.title, recipe.description, recipe.category, recipe.source,
+        return Recipe(recipe.recipe_id, recipe.title, recipe.description, recipe.category, recipe.image_url,
+                      recipe.source,
                       servings, recipe.calories, recipe.difficulty, recipe.spice_level, ingredients, recipe.steps)

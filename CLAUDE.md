@@ -46,7 +46,7 @@ These hold data only: private attributes, read-only properties, and values set t
 - `Pantry(savedIngredients, favoriteIngredients, allergies, dietaryRestrictions, savedRecipes, completedRecipes)`
 - `Ingredient(ingredientId, name, category, quantity, unit)`
 - `Allergy(allergyId, name)` and `DietaryRestriction(restrictionId, name)`
-- `Recipe(recipeId, title, description, category, source, servings, calories?, difficulty?, spiceLevel?, ingredients, steps)`. Cuisine, prep time, cook time, and images were removed.
+- `Recipe(recipeId, title, description, category, imageUrl?, source, servings, calories?, difficulty?, spiceLevel?, ingredients, steps)`. `imageUrl` comes from TheMealDB (`strMealThumb`); AI-generated recipes have none. Cuisine, prep time, and cook time were removed.
 - `RecipeStep(stepNumber, instructionText)`
 - `RecipeRating(user, recipe, stars)`
 - `PersonalNote(user, recipe, noteText, updatedAt)`
@@ -106,7 +106,8 @@ Each factory has dashed «creates» arrows to its interface and to its concrete 
 
 ## Code status
 
-- All 11 domain classes are done in `backend/models/` (snake_case attributes, read-only properties, no setters). `Recipe` constructor order: `recipe_id, title, description, category, source, servings, calories, difficulty, spice_level, ingredients, steps`.
+- All 11 domain classes are done in `backend/models/` (snake_case attributes, read-only properties, no setters). `Recipe` constructor order: `recipe_id, title, description, category, image_url, source, servings, calories, difficulty, spice_level, ingredients, steps`.
+- Recipe page layout (`recipe.html`): photo top-left with category, name, and description to its right (no photo for AI recipes); below, ingredients on the left and numbered, check-off-able steps on the right. Stacks on narrow screens. Search cards show the photo; AI cards keep the colored band.
 - TheMealDB search works end to end: `sources/recipe_searcher.py` (`RecipeSearcher` ABC), `sources/meal_db_recipe_searcher.py`, `factories/api_factory.py`, `services/recipe_service.py`, and `GET /api/recipes/search?ingredients=a,b` in `routes/recipes.py`. `app.py` builds the objects and injects them. Verified against the live API: filter.php matches exact ingredient names only (so the searcher also tries the singular/plural form), and passing several ingredients in one call returns nothing on the free key. TheMealDB has no servings, so `DEFAULT_SERVINGS = 4`. Recipe ids are `mealdb-<idMeal>`.
 - `repositories/recipe_repository.py` is TEMPORARY in-memory storage with the final public methods. Swap its internals to Supabase once the tables exist.
 - Generation still uses the old `OllamaClient` + `DatabaseMngr`; `get_recipe` checks `RecipeService` first, then the legacy store.

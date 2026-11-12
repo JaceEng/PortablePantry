@@ -13,6 +13,7 @@ class Recipe:
         title: str,
         description: str,
         category: str,
+        image_url: Optional[str],
         source: str,
         servings: int,
         calories: Optional[int],
@@ -25,6 +26,7 @@ class Recipe:
         self._title: str = title
         self._description: str = description
         self._category: str = category
+        self._image_url: Optional[str] = image_url  # None for AI-generated recipes
         self._source: str = source            # "ollama" or "themealdb"
         self._servings: int = servings
         self._calories: Optional[int] = calories      # per serving
@@ -49,6 +51,10 @@ class Recipe:
     def category(self) -> str:
         return self._category
  
+    @property
+    def image_url(self) -> Optional[str]:
+        return self._image_url
+
     @property
     def source(self) -> str:
         return self._source
