@@ -46,7 +46,7 @@ These hold data only: private attributes, read-only properties, and values set t
 - `Pantry(savedIngredients, favoriteIngredients, allergies, dietaryRestrictions, savedRecipes, completedRecipes)`
 - `Ingredient(ingredientId, name, category, quantity, unit)`
 - `Allergy(allergyId, name)` and `DietaryRestriction(restrictionId, name)`
-- `Recipe(recipeId, title, description, category, imageUrl, source, servings, calories?, difficulty?, spiceLevel?, ingredients, steps)`. Cuisine, prep time, and cook time were removed.
+- `Recipe(recipeId, title, description, category, source, servings, calories?, difficulty?, spiceLevel?, ingredients, steps)`. Cuisine, prep time, cook time, and images were removed.
 - `RecipeStep(stepNumber, instructionText)`
 - `RecipeRating(user, recipe, stars)`
 - `PersonalNote(user, recipe, noteText, updatedAt)`
@@ -106,7 +106,7 @@ Each factory has dashed «creates» arrows to its interface and to its concrete 
 
 ## Code status
 
-- `backend/models/recipe.py` is done. Constructor order: `recipe_id, title, description, category, image_url, source, servings, calories, difficulty, spice_level, ingredients, steps`. `pantry.py` and `recipe_step.py` are not in the repo yet.
+- `backend/models/recipe.py` is done. Constructor order: `recipe_id, title, description, category, source, servings, calories, difficulty, spice_level, ingredients, steps`. `pantry.py` and `recipe_step.py` are not in the repo yet.
 - `backend/services/databaseMngr.py` is a temporary in-memory dictionary and will be replaced by `DatabaseManager` and the repositories.
 - `backend/services/ollamaClient.py` has the pydantic schema, `build_prompt`, and `request_recipes`, with cuisine and cook time removed. It should be refactored into `OllamaRecipeGenerator`. Make `steps` and `ingredients` use `Field(min_length=1)` so empty lists trigger a retry.
 - The older procedural `routes/*.py` and `frontend/index.html`, `login.html`, and `recipe.html` must be replaced or refactored to the controller/service design.
