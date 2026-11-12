@@ -106,7 +106,8 @@ Each factory has dashed «creates» arrows to its interface and to its concrete 
 
 ## Code status
 
-- `backend/models/recipe.py` is done. Constructor order: `recipe_id, title, description, category, source, servings, calories, difficulty, spice_level, ingredients, steps`. `pantry.py` and `recipe_step.py` are not in the repo yet.
+- All 11 domain classes are done in `backend/models/` (snake_case attributes, read-only properties, no setters). `Recipe` constructor order: `recipe_id, title, description, category, source, servings, calories, difficulty, spice_level, ingredients, steps`.
+- Tests live in `backend/tests/`. Run `pytest` from `backend/` (`pytest.ini` sets the import path).
 - `backend/services/databaseMngr.py` is a temporary in-memory dictionary and will be replaced by `DatabaseManager` and the repositories.
 - `backend/services/ollamaClient.py` has the pydantic schema, `build_prompt`, and `request_recipes`, with cuisine and cook time removed. It should be refactored into `OllamaRecipeGenerator`. Make `steps` and `ingredients` use `Field(min_length=1)` so empty lists trigger a retry.
 - The older procedural `routes/*.py` and `frontend/index.html`, `login.html`, and `recipe.html` must be replaced or refactored to the controller/service design.
@@ -121,7 +122,7 @@ Each factory has dashed «creates» arrows to its interface and to its concrete 
 
 ## Next steps
 
-1. Write the remaining domain classes: `User`, `UserProfile`, `Ingredient`, `Allergy`, `DietaryRestriction`.
+1. ~~Write the remaining domain classes.~~ Done.
 2. Write the filters, sources, factories, services, repositories, and controllers.
 3. Decide on the Supabase Auth question and design the tables, including a user-to-recipe link table.
 4. Clean up `index.html` and `recipe.html`: remove the cook time and cuisine controls, and change the name search to ingredient search.
