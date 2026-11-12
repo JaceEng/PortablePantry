@@ -133,4 +133,4 @@ Each factory has dashed «creates» arrows to its interface and to its concrete 
    - Add TheMealDB.
 6. Update the use case and activity diagrams: remove the Rate and Filter diagrams, and add Search by Ingredients.
 7. Update the Lucidchart class diagram to match the v3 class list, and rewrite sections 4.3.1 and 4.3.2.1 for the 43-class design.
-8. Check git history for secrets, then make the repo public. Note that `backend/.env.txt` is committed (since commit `71b2034`) and is not covered by `.gitignore`.
+8. Make the repo public. `backend/.env.txt` was removed from tracking and `.gitignore` now covers `.env.*`, but the file is still in git history (since commit `71b2034`). Rotate any real keys that were in it before going public, and optionally scrub history with `git filter-repo`.
