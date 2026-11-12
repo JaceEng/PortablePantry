@@ -135,6 +135,10 @@
 
         // Keep the login token for later requests, if the backend sends one.
         if (data.access_token) sessionStorage.setItem("token", data.access_token);
+        const u = data.user || {};
+        sessionStorage.setItem("username", data.username || u.username || u.name || email.split("@")[0]);
+        sessionStorage.removeItem("welcomed");
+        sessionStorage.removeItem("guest");
         window.location.href = "index.html";
       } catch (err) {
         setStatus("Could not reach the server. Check that the backend is running.", true);

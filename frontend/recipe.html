@@ -4,356 +4,70 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Recipe - Portable Pantry</title>
-  <style>
-    * { box-sizing: border-box; }
-
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      margin: 0;
-      color: #222;
-      background: #fff;
-    }
-
-    .nav {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 12px 20px;
-      border-bottom: 1px solid #ccc;
-    }
-    .nav h1 { font-size: 1.3rem; margin: 0; flex: 1; }
-    .nav a { color: inherit; }
-
-    main {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    #recipe { display: flex; flex-direction: column; gap: 20px; }
-    #recipe[hidden] { display: none; }
-
-    .panel { border: 1px solid #ccc; padding: 16px; }
-    .panel h2 { margin-top: 0; font-size: 1.1rem; }
-
-    #title { margin: 0 0 8px; font-size: 1.5rem; }
-    #description { margin: 0 0 12px; }
-
-    .meta { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 0.9rem; }
-
-    .servings { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-    .servings input { width: 70px; font-size: 1rem; padding: 6px; }
-
-    #ingredients, #steps { margin: 0; padding-left: 22px; }
-    #ingredients li, #steps li { padding: 3px 0; }
-
-    .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
-    button { font-size: 1rem; padding: 6px 10px; cursor: pointer; }
-    button:disabled { cursor: default; }
-
-    .stars button { font-size: 1.5rem; padding: 0 4px; border: none; background: none; color: #aaa; }
-    .stars button.on { color: #e0a800; }
-
-    textarea { width: 100%; font-size: 1rem; padding: 8px; font-family: inherit; min-height: 80px; }
-    .note-label { display: block; margin-bottom: 4px; font-size: 0.9rem; }
-
-    #status, #actionStatus { min-height: 1.2em; margin: 0; }
-    .error { color: #b00020; }
-    .estimate { font-size: 0.85rem; color: #555; margin: 8px 0 0; }
-  </style>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#129360;</text></svg>">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-
   <header class="nav">
     <h1>Portable Pantry</h1>
-    <a href="index.html">Back to recipes</a>
+    <a class="btn small ghostbtn back" href="index.html">&larr; Back to recipes</a>
   </header>
 
-  <main>
+  <main class="single">
     <p id="status" role="status">Loading recipe...</p>
 
     <article id="recipe" hidden>
-      <section class="panel">
-        <h2 id="title"></h2>
-        <p id="description"></p>
-        <ul class="meta" id="meta"></ul>
-        <p class="estimate">Recipes and calorie counts are AI-generated estimates. Always check ingredients for allergens.</p>
-      </section>
-
-      <section class="panel">
-        <h2>Ingredients</h2>
-        <div class="servings">
-          <label for="servingsInput">Servings</label>
-          <input type="number" id="servingsInput" min="1" max="100" value="2">
+      <section class="panel hero">
+        <div class="hero-band"></div>
+        <div class="hero-body">
+          <h2 id="title"></h2>
+          <p id="description"></p>
+          <ul class="meta" id="meta"></ul>
+          <p class="estimate">Recipes and calorie counts are AI-generated estimates. Always check ingredients for allergens.</p>
         </div>
-        <ul id="ingredients"></ul>
       </section>
 
-      <section class="panel">
-        <h2>Instructions</h2>
-        <ol id="steps"></ol>
-      </section>
+      <div class="cols">
+        <section class="panel">
+          <h2>Ingredients</h2>
+          <div class="servings">
+            <label for="servingsInput">Servings</label>
+            <input type="number" id="servingsInput" min="1" max="100" value="2">
+          </div>
+          <ul id="ingredients"></ul>
+        </section>
+        <section class="panel">
+          <h2>Instructions</h2>
+          <ol id="steps"></ol>
+        </section>
+      </div>
 
       <section class="panel" id="actions" hidden>
         <h2>Your recipe options</h2>
-
         <div class="row">
           <button type="button" id="saveBtn">Save recipe</button>
-          <button type="button" id="completedBtn">Mark as completed</button>
+          <button type="button" id="completedBtn" class="ghost">Mark as completed</button>
         </div>
-
         <div class="row">
           <span>Your rating:</span>
           <span class="stars" id="stars"></span>
         </div>
-
         <label class="note-label" for="noteInput">Personal note (only you can see it)</label>
         <textarea id="noteInput" maxlength="2000" placeholder="Ingredient substitutions, cooking tips..."></textarea>
-        <div class="row" style="margin-top: 8px;">
-          <button type="button" id="noteBtn">Save note</button>
+        <div class="row" style="margin-top:10px;">
+          <button type="button" id="noteBtn" class="ghost">Save note</button>
         </div>
-
         <p id="actionStatus" role="status"></p>
       </section>
 
       <section class="panel" id="guestNote" hidden>
-        <p style="margin: 0;">
-          <a href="login.html">Log in</a> or <a href="signup.html">sign up</a>
-          to save this recipe, rate it, add notes, and mark it as completed.
-        </p>
+        <p style="margin:0 0 12px;">Log in or sign up to save this recipe, rate it, add notes, and mark it as completed.</p>
+        <button type="button" id="guestLoginBtn">Log in or sign up</button>
       </section>
     </article>
   </main>
 
-  <script>
-    // Empty string = the same server the page was loaded from (Flask serves the frontend).
-    const API_URL = "";
-
-    const params = new URLSearchParams(window.location.search);
-    const recipeId = params.get("id");
-    const token = sessionStorage.getItem("token");
-
-    let recipe = null;
-    let saved = false;
-
-    const $ = (id) => document.getElementById(id);
-
-    function setStatus(message, isError) {
-      $("status").textContent = message;
-      $("status").className = isError ? "error" : "";
-    }
-
-    function setActionStatus(message, isError) {
-      $("actionStatus").textContent = message;
-      $("actionStatus").className = isError ? "error" : "";
-    }
-
-    // ---- Load the recipe ----
-    async function loadRecipe() {
-      if (!recipeId) {
-        setStatus("No recipe was selected. Go back and choose a recipe.", true);
-        return;
-      }
-      try {
-        const headers = token ? { Authorization: "Bearer " + token } : {};
-        const response = await fetch(API_URL + "/api/recipes/" + encodeURIComponent(recipeId), { headers });
-        if (response.status === 404) {
-          setStatus("Recipe not found. It may no longer be available.", true);
-          return;
-        }
-        if (!response.ok) throw new Error("The server returned an error (" + response.status + ").");
-        recipe = await response.json();
-        showRecipe();
-      } catch (err) {
-        setStatus("Could not load the recipe. " + err.message, true);
-      }
-    }
-
-    // ---- Display ----
-    function addMeta(list, label, value, suffix) {
-      if (value === undefined || value === null || value === "") return;
-      const li = document.createElement("li");
-      li.textContent = label + ": " + value + (suffix || "");
-      list.appendChild(li);
-    }
-
-    function formatAmount(quantity) {
-      if (!quantity) return "";
-      return String(Math.round(quantity * 100) / 100);
-    }
-
-    function renderIngredients() {
-      const base = recipe.servings || 1;
-      const wanted = Number($("servingsInput").value) || base;
-      const factor = wanted / base;
-
-      const list = $("ingredients");
-      list.innerHTML = "";
-      (recipe.ingredients || []).forEach((item) => {
-        const text = [formatAmount(item.quantity * factor), item.unit, item.name]
-          .filter(Boolean).join(" ");
-        const li = document.createElement("li");
-        li.textContent = text;
-        list.appendChild(li);
-      });
-    }
-
-    function showRecipe() {
-      document.title = recipe.title + " - Portable Pantry";
-      $("title").textContent = recipe.title || "Untitled recipe";
-      $("description").textContent = recipe.description || "";
-
-      const meta = $("meta");
-      meta.innerHTML = "";
-      addMeta(meta, "Prep time", recipe.prepTime, " min");
-      addMeta(meta, "Cook time", recipe.cookTime, " min");
-      addMeta(meta, "Difficulty", recipe.difficulty, " of 4");
-      addMeta(meta, "Calories", recipe.calories, " per serving (estimate)");
-      addMeta(meta, "Spice level", recipe.spiceLevel, " of 5");
-      addMeta(meta, "Cuisine", recipe.cuisine);
-      addMeta(meta, "Meal type", recipe.mealType);
-      addMeta(meta, "Cook method", recipe.cookMethod);
-      addMeta(meta, "Category", recipe.foodCategory);
-      addMeta(meta, "Flavor", recipe.flavor);
-
-      $("servingsInput").value = recipe.servings || 2;
-      renderIngredients();
-
-      const steps = $("steps");
-      steps.innerHTML = "";
-      (recipe.steps || [])
-        .slice()
-        .sort((a, b) => a.stepNumber - b.stepNumber)
-        .forEach((step) => {
-          const li = document.createElement("li");
-          li.textContent = step.instructionText;
-          steps.appendChild(li);
-        });
-
-      setStatus("", false);
-      $("recipe").hidden = false;
-
-      if (token) {
-        $("actions").hidden = false;
-        setupActions();
-      } else {
-        $("guestNote").hidden = false;
-      }
-    }
-
-    // ---- Registered user actions ----
-    async function callApi(method, path, body) {
-      try {
-        const response = await fetch(API_URL + path, {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + token
-          },
-          body: body ? JSON.stringify(body) : undefined
-        });
-        const data = await response.json().catch(() => ({}));
-
-        if (response.status === 401) {
-          sessionStorage.removeItem("token");
-          setActionStatus("Your session has expired. Please log in again.", true);
-          return null;
-        }
-        if (!response.ok) {
-          setActionStatus(data.error || "Something went wrong. Try again.", true);
-          return null;
-        }
-        return data;
-      } catch (err) {
-        setActionStatus("Could not reach the server.", true);
-        return null;
-      }
-    }
-
-    function showStars(count) {
-      document.querySelectorAll("#stars button").forEach((button, i) => {
-        const on = i < count;
-        button.classList.toggle("on", on);
-        button.setAttribute("aria-pressed", String(i + 1 === count));
-      });
-    }
-
-    function updateSaveButton() {
-      $("saveBtn").textContent = saved ? "Remove from saved recipes" : "Save recipe";
-    }
-
-    function setupActions() {
-      // Build the five star buttons
-      const stars = $("stars");
-      stars.innerHTML = "";
-      for (let n = 1; n <= 5; n++) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = "\u2605";
-        button.setAttribute("aria-label", n + (n === 1 ? " star" : " stars"));
-        button.addEventListener("click", () => rate(n));
-        stars.appendChild(button);
-      }
-
-      // If the backend sends the user's earlier choices, show them
-      if (recipe.userRating) showStars(recipe.userRating);
-      if (recipe.userNote) $("noteInput").value = recipe.userNote;
-      if (recipe.completed) markCompletedButton();
-      saved = Boolean(recipe.saved);
-      updateSaveButton();
-    }
-
-    async function rate(stars) {
-      const data = await callApi("POST", "/api/recipes/" + encodeURIComponent(recipeId) + "/rating", { stars });
-      if (data) {
-        showStars(stars);
-        setActionStatus("Rating saved.", false);
-      }
-    }
-
-    async function saveNote() {
-      const text = $("noteInput").value.trim();
-      if (!text) {
-        setActionStatus("Write a note before saving.", true);
-        return;
-      }
-      const data = await callApi("POST", "/api/recipes/" + encodeURIComponent(recipeId) + "/note", { text });
-      if (data) setActionStatus("Note saved.", false);
-    }
-
-    function markCompletedButton() {
-      $("completedBtn").textContent = "Completed \u2713";
-      $("completedBtn").disabled = true;
-    }
-
-    async function markCompleted() {
-      const data = await callApi("POST", "/api/recipes/" + encodeURIComponent(recipeId) + "/completed");
-      if (data) {
-        markCompletedButton();
-        setActionStatus("Marked as completed.", false);
-      }
-    }
-
-    async function toggleSaved() {
-      const path = "/api/pantry/recipes/" + encodeURIComponent(recipeId);
-      const data = await callApi(saved ? "DELETE" : "POST", path);
-      if (data) {
-        saved = !saved;
-        updateSaveButton();
-        setActionStatus(saved ? "Recipe saved." : "Recipe removed from your saved recipes.", false);
-      }
-    }
-
-    // ---- Wire up ----
-    $("servingsInput").addEventListener("input", renderIngredients);
-    $("saveBtn").addEventListener("click", toggleSaved);
-    $("completedBtn").addEventListener("click", markCompleted);
-    $("noteBtn").addEventListener("click", saveNote);
-
-    loadRecipe();
-  </script>
+  <script src="js/core.js"></script>
+  <script src="js/recipe.js"></script>
 </body>
 </html>
