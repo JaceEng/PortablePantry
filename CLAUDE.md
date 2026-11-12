@@ -46,7 +46,7 @@ These hold data only: private attributes, read-only properties, and values set t
 - `Pantry(savedIngredients, favoriteIngredients, allergies, dietaryRestrictions, savedRecipes, completedRecipes)`
 - `Ingredient(ingredientId, name, category, quantity, unit)`
 - `Allergy(allergyId, name)` and `DietaryRestriction(restrictionId, name)`
-- `Recipe(recipeId, title, description, category, imageUrl, source, servings, calories?, difficulty?, spiceLevel?, ingredients, steps)`. Cuisine, prep time, and cook time were removed.
+- `Recipe(recipeId, title, description, category, source, servings, calories?, difficulty?, spiceLevel?, ingredients, steps)`. Cuisine, prep time, cook time, and images were removed.
 - `RecipeStep(stepNumber, instructionText)`
 - `RecipeRating(user, recipe, stars)`
 - `PersonalNote(user, recipe, noteText, updatedAt)`
@@ -106,7 +106,11 @@ Each factory has dashed «creates» arrows to its interface and to its concrete 
 
 ## Code status
 
-- `backend/models/recipe.py` is in the repo but has two bugs: it needs `from __future__ import annotations` (it fails to import), and the `image_url` property reads `self._image_url`, which the constructor never sets. `pantry.py` and `recipe_step.py` are not in the repo yet.
+- All 11 domain classes are done in `backend/models/` (snake_case attributes, read-only properties, no setters). `Recipe` constructor order: `recipe_id, title, description, category, source, servings, calories, difficulty, spice_level, ingredients, steps`.
+- TheMealDB search works end to end: `sources/recipe_searcher.py` (`RecipeSearcher` ABC), `sources/meal_db_recipe_searcher.py`, `factories/api_factory.py`, `services/recipe_service.py`, and `GET /api/recipes/search?ingredients=a,b` in `routes/recipes.py`. `app.py` builds the objects and injects them. Verified against the live API: filter.php matches exact ingredient names only (so the searcher also tries the singular/plural form), and passing several ingredients in one call returns nothing on the free key. TheMealDB has no servings, so `DEFAULT_SERVINGS = 4`. Recipe ids are `mealdb-<idMeal>`.
+- `repositories/recipe_repository.py` is TEMPORARY in-memory storage with the final public methods. Swap its internals to Supabase once the tables exist.
+- Generation still uses the old `OllamaClient` + `DatabaseMngr`; `get_recipe` checks `RecipeService` first, then the legacy store.
+- Tests live in `backend/tests/`. Run `pytest` from `backend/` (`pytest.ini` sets the import path).
 - `backend/services/databaseMngr.py` is a temporary in-memory dictionary and will be replaced by `DatabaseManager` and the repositories.
 - `backend/services/ollamaClient.py` has the pydantic schema, `build_prompt`, and `request_recipes`, with cuisine and cook time removed. It should be refactored into `OllamaRecipeGenerator`. Make `steps` and `ingredients` use `Field(min_length=1)` so empty lists trigger a retry.
 - The older procedural `routes/*.py` and `frontend/index.html`, `login.html`, and `recipe.html` must be replaced or refactored to the controller/service design.
@@ -121,7 +125,7 @@ Each factory has dashed «creates» arrows to its interface and to its concrete 
 
 ## Next steps
 
-1. Write the remaining domain classes: `User`, `UserProfile`, `Ingredient`, `Allergy`, `DietaryRestriction`.
+1. ~~Write the remaining domain classes.~~ Done.
 2. Write the filters, sources, factories, services, repositories, and controllers.
 3. Decide on the Supabase Auth question and design the tables, including a user-to-recipe link table.
 4. Clean up `index.html` and `recipe.html`: remove the cook time and cuisine controls, and change the name search to ingredient search.

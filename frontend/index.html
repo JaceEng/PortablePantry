@@ -66,7 +66,7 @@
     <header class="nav">
       <h1>Portable Pantry</h1>
       <div class="search">
-        <input type="text" id="searchInput" placeholder="Search recipes by name" aria-label="Search recipes by name">
+        <input type="text" id="searchInput" placeholder="Search by ingredients, e.g. chicken, garlic" aria-label="Search recipes by ingredients">
         <button id="searchBtn" class="ghost">Search</button>
       </div>
       <div class="menu-wrap">
@@ -112,6 +112,7 @@
           </details>
           <div class="actions">
             <button id="generateBtn">Generate recipes</button>
+            <button id="searchListBtn" type="button" class="ghost">Find recipes</button>
             <button id="clearFiltersBtn" type="button" class="ghost">Clear</button>
           </div>
         </section>
@@ -130,7 +131,7 @@
           </div>
           <p id="status" role="status" hidden></p>
           <div id="results"></div>
-          <div class="placeholder">Add your ingredients, set any filters, and choose Generate recipes.</div>
+          <div class="placeholder">Add your ingredients, then choose Generate recipes (AI, slower) or Find recipes (fast).</div>
         </section>
       </div>
     </main>

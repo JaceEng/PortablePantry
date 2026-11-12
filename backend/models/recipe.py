@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional
 
@@ -47,10 +48,6 @@ class Recipe:
     @property
     def category(self) -> str:
         return self._category
- 
-    @property
-    def image_url(self) -> Optional[str]:
-        return self._image_url
  
     @property
     def source(self) -> str:

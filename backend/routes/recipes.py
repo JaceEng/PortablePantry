@@ -1,12 +1,21 @@
+from typing import Any, Dict
+
 from flask import request, jsonify, Blueprint
 
+from models.ingredient import Ingredient
+from models.recipe import Recipe
 from services.ollamaClient import OllamaClient, OllamaError
 # from services.authService import AuthService
 from services.databaseMngr import DatabaseMngr
+from services.recipe_service import RecipeService
+from sources.recipe_searcher import RecipeSearchError
 
 class RecipesController:
-    def __init__(self):
+    def __init__(self, recipe_service: RecipeService):
         self.blueprint = Blueprint("recipes", __name__)
+        self.recipe_service = recipe_service
+        # TEMPORARY: generation still uses the old OllamaClient and in-memory
+        # DatabaseMngr until OllamaRecipeGenerator and RecommendationService exist.
         self.db = DatabaseMngr()
         self.ollamaClient = OllamaClient()
         self.blueprint.add_url_rule("/generate", endpoint="generate", view_func=self.generate, methods=["POST"])
@@ -56,19 +65,40 @@ class RecipesController:
  
  
     def search(self):
-        name = request.args.get("name", "").strip()
-        if not name:
-            return self.error("Enter a recipe name to search for.", 400)
+        """GET /api/recipes/search?ingredients=chicken,garlic (TheMealDB)."""
+        names = [n.strip() for n in request.args.get("ingredients", "").split(",") if n.strip()]
+        if not names:
+            return self.error("Enter at least one ingredient to search for.", 400)
 
-        results = self.db.search_recipes(name)
-        return jsonify({"recipes": results})
+        ingredients = [Ingredient("", name, "", 0.0, "") for name in names]
+        try:
+            recipes = self.recipe_service.search_recipes(ingredients)
+        except RecipeSearchError as problem:
+            return self.error(str(problem), 502)
+        return jsonify({"recipes": [self.to_json(r) for r in recipes]})
 
     def get_recipe(self, recipe_id):
-        recipe = self.db.get_recipe(recipe_id)
-        if recipe is None:
+        recipe = self.recipe_service.get_recipe(recipe_id)
+        if recipe is not None:
+            return jsonify(self.to_json(recipe))
+        legacy = self.db.get_recipe(recipe_id)  # recipes from the old generate route
+        if legacy is None:
             return self.error("Recipe not found.", 404)
-        return jsonify(recipe)
+        return jsonify(legacy)
 
-
-recipes_controller = RecipesController()
-recipes_bp = recipes_controller.blueprint
+    @staticmethod
+    def to_json(recipe: Recipe) -> Dict[str, Any]:
+        """The camelCase shape the frontend reads."""
+        return {
+            "id": recipe.recipe_id,
+            "title": recipe.title,
+            "description": recipe.description,
+            "foodCategory": recipe.category,
+            "source": recipe.source,
+            "servings": recipe.servings,
+            "calories": recipe.calories,
+            "difficulty": recipe.difficulty,
+            "spiceLevel": recipe.spice_level,
+            "ingredients": [{"name": i.name, "quantity": i.quantity, "unit": i.unit} for i in recipe.ingredients],
+            "steps": [{"stepNumber": s.step_number, "instructionText": s.instruction_text} for s in recipe.steps],
+        }

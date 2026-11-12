@@ -12,6 +12,9 @@ class Config:
     OLLAMA_URL = os.getenv("OLLAMA_URL","http://localhost:11434")
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1")
 
+    MEALDB_URL = os.getenv("MEALDB_URL", "https://www.themealdb.com/api/json/v1")
+    MEALDB_API_KEY = os.getenv("MEALDB_API_KEY", "1")  # "1" is TheMealDB's free test key
+
     SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "dev-only-change-me")
     DEBUG = os.getenv("FLASK_DEBUG", "0") =="1"
     PORT = int(os.getenv("PORT", 5000))

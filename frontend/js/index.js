@@ -37,7 +37,9 @@ class RecipeService {
   #api;
   constructor(api) { this.#api = api; }
   async generate(query) { return (await this.#api.post("/api/recipes/generate", query)).recipes ?? []; }
-  async search(name) { return (await this.#api.get("/api/recipes/search", { name })).recipes ?? []; }
+  async search(ingredients) {
+    return (await this.#api.get("/api/recipes/search", { ingredients: ingredients.join(",") })).recipes ?? [];
+  }
   // ASSUMPTION: this route does not exist yet in the backend.
   async recommended() { return (await this.#api.get("/api/recipes/recommended")).recipes ?? []; }
 }
@@ -58,7 +60,7 @@ class RecipeCard {
     const r = this.#r, e = Html.escape;
     return `
       <article class="recipe">
-        <div class="recipe-top">${e(r.cuisine || r.mealType || "Recipe")}</div>
+        <div class="recipe-top">${e(r.cuisine || r.mealType || r.foodCategory || "Recipe")}</div>
         <div class="recipe-body">
           <h3>${e(r.title || "Untitled recipe")}</h3>
           <p class="desc">${e(r.description)}</p>
@@ -385,6 +387,7 @@ class PantryApp {
     $("regenerateBtn").addEventListener("click", () => this.#regenerate());
     $("clearFiltersBtn").addEventListener("click", () => this.#filters.clear());
     $("searchBtn").addEventListener("click", () => this.#search());
+    $("searchListBtn").addEventListener("click", () => this.#search(this.#ingredients.items));
     $("searchInput").addEventListener("keydown", (e) => { if (e.key === "Enter") this.#search(); });
   }
 
@@ -457,13 +460,15 @@ class PantryApp {
     if (this.#lastQuery) this.#generate(this.#lastQuery.withExclude(this.#results.shownTitles));
   }
 
-  async #search() {
-    const name = $("searchInput").value.trim();
-    if (!name) return this.#results.status("Type a recipe name to search for.", true);
+  /** Searches TheMealDB. Uses the search box (comma-separated), or the ingredient list if it is empty. */
+  async #search(fromList) {
+    const typed = $("searchInput").value.split(",").map((s) => s.trim()).filter(Boolean);
+    const ingredients = fromList ?? (typed.length ? typed : this.#ingredients.items);
+    if (!ingredients.length) return this.#results.status("Add or type at least one ingredient to search for.", true);
     const id = ++this.#requestId;
     this.#results.status("Searching...");
     try {
-      const recipes = await this.#recipes.search(name);
+      const recipes = await this.#recipes.search(ingredients);
       if (id === this.#requestId) this.#results.show(recipes, { canRegenerate: false });
     } catch (err) {
       if (id === this.#requestId) this.#results.status(this.#explain(err, "Search failed."), true);
