@@ -3,7 +3,10 @@ from flask_cors import CORS
 
 from config import Config
 # from routes.auth import auth_bp
-from routes.recipes import recipes_bp
+from factories.api_factory import APIFactory
+from repositories.recipe_repository import RecipeRepository
+from routes.recipes import RecipesController
+from services.recipe_service import RecipeService
 # from routes.pantry import pantry_bp
 # from routes.profile import profile_bp
 
@@ -17,7 +20,13 @@ class Application:
         if missing:
             print("Warning: missing settings in .env:", ", ".join(missing))
 
-        self.app.register_blueprint(recipes_bp, url_prefix="/api/recipes")
+        # Build each object once and pass it in through the constructor.
+        recipe_repository = RecipeRepository()
+        api_factory = APIFactory({"MEALDB_URL": Config.MEALDB_URL, "MEALDB_API_KEY": Config.MEALDB_API_KEY})
+        recipe_service = RecipeService(api_factory, recipe_repository)
+        recipes_controller = RecipesController(recipe_service)
+
+        self.app.register_blueprint(recipes_controller.blueprint, url_prefix="/api/recipes")
         self.app.add_url_rule("/", view_func=self.home)
         self.app.register_error_handler(404, self.not_found)
         self.app.register_error_handler(500, self.server_error)

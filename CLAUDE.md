@@ -107,6 +107,9 @@ Each factory has dashed «creates» arrows to its interface and to its concrete 
 ## Code status
 
 - All 11 domain classes are done in `backend/models/` (snake_case attributes, read-only properties, no setters). `Recipe` constructor order: `recipe_id, title, description, category, source, servings, calories, difficulty, spice_level, ingredients, steps`.
+- TheMealDB search works end to end: `sources/recipe_searcher.py` (`RecipeSearcher` ABC), `sources/meal_db_recipe_searcher.py`, `factories/api_factory.py`, `services/recipe_service.py`, and `GET /api/recipes/search?ingredients=a,b` in `routes/recipes.py`. `app.py` builds the objects and injects them. Verified against the live API: filter.php matches exact ingredient names only (so the searcher also tries the singular/plural form), and passing several ingredients in one call returns nothing on the free key. TheMealDB has no servings, so `DEFAULT_SERVINGS = 4`. Recipe ids are `mealdb-<idMeal>`.
+- `repositories/recipe_repository.py` is TEMPORARY in-memory storage with the final public methods. Swap its internals to Supabase once the tables exist.
+- Generation still uses the old `OllamaClient` + `DatabaseMngr`; `get_recipe` checks `RecipeService` first, then the legacy store.
 - Tests live in `backend/tests/`. Run `pytest` from `backend/` (`pytest.ini` sets the import path).
 - `backend/services/databaseMngr.py` is a temporary in-memory dictionary and will be replaced by `DatabaseManager` and the repositories.
 - `backend/services/ollamaClient.py` has the pydantic schema, `build_prompt`, and `request_recipes`, with cuisine and cook time removed. It should be refactored into `OllamaRecipeGenerator`. Make `steps` and `ingredients` use `Field(min_length=1)` so empty lists trigger a retry.
