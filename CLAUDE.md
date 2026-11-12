@@ -1,6 +1,6 @@
 # Portable Pantry: project context (IT 326 Software Design Principles, Team A)
 
-This summary is the current source of truth. The class list PDF (`Portable_Pantry_Class_List_Final_v2.pdf`) is the full reference, but it still shows `searchByName` and `keyword` because it hasn't been updated for ingredient search.
+This summary is the current source of truth. The full class list, with every attribute and method, is `docs/Portable_Pantry_Class_List_v3.pdf` (43 classes). Older class lists and the Lucidchart diagram are out of date.
 
 ## Project
 
@@ -36,7 +36,7 @@ Stack:
 
 Controller → Service → Repository → Supabase. Controllers never call repositories. Dependencies are injected through constructors.
 
-## Class design (42 classes)
+## Class design (43 classes)
 
 ### Domain classes
 
@@ -50,7 +50,7 @@ These hold data only: private attributes, read-only properties, and values set t
 - `RecipeStep(stepNumber, instructionText)`
 - `RecipeRating(user, recipe, stars)`
 - `PersonalNote(user, recipe, noteText, updatedAt)`
-- `RecipeQuery(ingredients, keyword, filters, portionSize)`. The `keyword` field is stale now that search is by ingredient.
+- `RecipeQuery(ingredients, filters, portionSize)`. `keyword` was removed now that search is by ingredient.
 
 ### Filters
 
@@ -79,11 +79,11 @@ The professor wanted two factories.
 
 ### Repositories
 
-`UserRepository`, `PantryRepository`, `RecipeRepository`, and `UserRecipeRepository`, all using `SupabaseClient`.
+`UserRepository`, `PantryRepository`, `RecipeRepository`, and `UserRecipeRepository`, all sharing one `DatabaseManager` (the single Supabase connection; it replaces the earlier `SupabaseClient` name). The team chose to keep separate repositories rather than one large database class.
 
 ### Controllers
 
-`AuthController`, `AccountController`, `RecipeController`, `UserRecipeController`, `PantryController`.
+`AuthController`, `AccountController`, `RecipeController`, `UserRecipeController`, `PantryController`. These replace `IngredientController` and `RecommendationController` from the Lucidchart diagram. `PortionCalculator` was dropped in favor of `RecipeService.scaleRecipe`.
 
 ### Patterns
 
@@ -106,7 +106,8 @@ Each factory has dashed «creates» arrows to its interface and to its concrete 
 
 ## Code status
 
-- `backend/models/pantry.py`, `recipe.py`, and `recipe_step.py` are reported as done in OO style. **As of this commit they are not in the repo** (there is no `backend/models/` folder), so they still need to be committed.
+- `backend/models/recipe.py` is in the repo but has two bugs: it needs `from __future__ import annotations` (it fails to import), and the `image_url` property reads `self._image_url`, which the constructor never sets. `pantry.py` and `recipe_step.py` are not in the repo yet.
+- `backend/services/databaseMngr.py` is a temporary in-memory dictionary and will be replaced by `DatabaseManager` and the repositories.
 - `backend/services/ollamaClient.py` has the pydantic schema, `build_prompt`, and `request_recipes`, with cuisine and cook time removed. It should be refactored into `OllamaRecipeGenerator`. Make `steps` and `ingredients` use `Field(min_length=1)` so empty lists trigger a retry.
 - The older procedural `routes/*.py` and `frontend/index.html`, `login.html`, and `recipe.html` must be replaced or refactored to the controller/service design.
 
@@ -131,5 +132,5 @@ Each factory has dashed «creates» arrows to its interface and to its concrete 
    - Fix the pre/post-condition wording ("profile", "list").
    - Add TheMealDB.
 6. Update the use case and activity diagrams: remove the Rate and Filter diagrams, and add Search by Ingredients.
-7. Rewrite sections 4.3.1 and 4.3.2.1 for the 42-class design.
+7. Update the Lucidchart class diagram to match the v3 class list, and rewrite sections 4.3.1 and 4.3.2.1 for the 43-class design.
 8. Check git history for secrets, then make the repo public. Note that `backend/.env.txt` is committed (since commit `71b2034`) and is not covered by `.gitignore`.
