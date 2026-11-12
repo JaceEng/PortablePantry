@@ -1,5 +1,7 @@
 # --- Secrets ---
+# Covers .env, .env.txt, .env.local, and similar. Only .env.example is committed.
 .env
+.env.*
 *.env
 !.env.example
 
