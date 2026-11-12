@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional
 
@@ -12,6 +13,7 @@ class Recipe:
         title: str,
         description: str,
         category: str,
+        image_url: Optional[str],
         source: str,
         servings: int,
         calories: Optional[int],
@@ -24,6 +26,7 @@ class Recipe:
         self._title: str = title
         self._description: str = description
         self._category: str = category
+        self._image_url: Optional[str] = image_url
         self._source: str = source            # "ollama" or "themealdb"
         self._servings: int = servings
         self._calories: Optional[int] = calories      # per serving

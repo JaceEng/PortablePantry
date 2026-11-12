@@ -106,7 +106,7 @@ Each factory has dashed «creates» arrows to its interface and to its concrete 
 
 ## Code status
 
-- `backend/models/recipe.py` is in the repo but has two bugs: it needs `from __future__ import annotations` (it fails to import), and the `image_url` property reads `self._image_url`, which the constructor never sets. `pantry.py` and `recipe_step.py` are not in the repo yet.
+- `backend/models/recipe.py` is done. Constructor order: `recipe_id, title, description, category, image_url, source, servings, calories, difficulty, spice_level, ingredients, steps`. `pantry.py` and `recipe_step.py` are not in the repo yet.
 - `backend/services/databaseMngr.py` is a temporary in-memory dictionary and will be replaced by `DatabaseManager` and the repositories.
 - `backend/services/ollamaClient.py` has the pydantic schema, `build_prompt`, and `request_recipes`, with cuisine and cook time removed. It should be refactored into `OllamaRecipeGenerator`. Make `steps` and `ingredients` use `Field(min_length=1)` so empty lists trigger a retry.
 - The older procedural `routes/*.py` and `frontend/index.html`, `login.html`, and `recipe.html` must be replaced or refactored to the controller/service design.
