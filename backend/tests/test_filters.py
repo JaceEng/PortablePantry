@@ -19,7 +19,7 @@ from models.recipe import Recipe
 
 
 def recipe(rid: str, category: str, ingredients: List[str], calories=None, difficulty=None, spice=None) -> Recipe:
-    return Recipe(rid, rid, "", category, "test", 4, calories, difficulty, spice,
+    return Recipe(rid, rid, "", category, None, "test", 4, calories, difficulty, spice,
                   [Ingredient("", n, "", 1.0, "") for n in ingredients], [])
 
 

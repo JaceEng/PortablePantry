@@ -35,6 +35,18 @@ class RecipeDetail {
     document.title = (r.title || "Recipe") + " - Portable Pantry";
     $("title").textContent = r.title || "Untitled recipe";
     $("description").textContent = r.description || "";
+    $("category").textContent = r.foodCategory || "";
+    $("category").hidden = !r.foodCategory;
+    // Only searched recipes (TheMealDB) have pictures. AI-generated ones don't.
+    if (r.imageUrl) {
+        $("image").src = r.imageUrl;
+        $("image").alt = r.title || "Recipe photo";
+        $("image").hidden = false;
+        $("image").addEventListener("error", () => { $("image").hidden = true; });
+    }
+    $("estimate").textContent = r.source === "themealdb"
+        ? "Recipe from TheMealDB. Always check ingredients for allergens."
+        : "Recipes and calorie counts are AI-generated estimates. Always check ingredients for allergens.";
     $("meta").replaceChildren(...this.#facts());
     $("servingsInput").value = r.servings || 2;
     this.#renderIngredients();
@@ -47,7 +59,7 @@ class RecipeDetail {
         ["Prep time", r.prepTime, " min"], ["Cook time", r.cookTime, " min"],
         ["Difficulty", r.difficulty, " of 4"], ["Calories", r.calories, " per serving (estimate)"],
         ["Spice level", r.spiceLevel, " of 5"], ["Cuisine", r.cuisine], ["Meal type", r.mealType],
-        ["Cook method", r.cookMethod], ["Category", r.foodCategory], ["Flavor", r.flavor]
+        ["Cook method", r.cookMethod], ["Flavor", r.flavor]
     ]
         .filter(([, value]) => value !== undefined && value !== null && value !== "")
         .map(([label, value, suffix = ""]) => {
@@ -63,16 +75,34 @@ class RecipeDetail {
     const factor = wanted >= 1 ? wanted / base : 1;
     $("ingredients").replaceChildren(...(this.#r.ingredients || []).map((item) => {
         const li = document.createElement("li");
-      li.textContent = [RecipeDetail.amount(item.quantity * factor), item.unit, item.name].filter(Boolean).join(" ");
+        const amount = document.createElement("span");
+        amount.className = "amount";
+        amount.textContent = [RecipeDetail.amount(item.quantity * factor), item.unit].filter(Boolean).join(" ");
+        const name = document.createElement("span");
+        name.textContent = item.name;
+        li.append(amount, name);
         return li;
     }));
     }
 
     #renderSteps() {
     const steps = [...(this.#r.steps || [])].sort((a, b) => a.stepNumber - b.stepNumber);
-    $("steps").replaceChildren(...steps.map((step) => {
+    // Each step is a big numbered row the cook can tick off.
+    $("steps").replaceChildren(...steps.map((step, i) => {
         const li = document.createElement("li");
-        li.textContent = step.instructionText;
+        const label = document.createElement("label");
+        label.className = "step";
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.setAttribute("aria-label", `Step ${i + 1} done`);
+        const number = document.createElement("span");
+        number.className = "step-num";
+        number.textContent = String(i + 1);
+        const text = document.createElement("span");
+        text.className = "step-text";
+        text.textContent = step.instructionText;
+        label.append(box, number, text);
+        li.append(label);
         return li;
     }));
     }

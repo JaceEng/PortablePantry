@@ -14,7 +14,7 @@ from sources.recipe_searcher import RecipeSearchError
 
 FILTER = {"chicken": ["1", "2"], "garlic": ["2", "3"], "eggs": ["3"]}
 MEALS = {
-    "1": {"idMeal": "1", "strMeal": "Roast Chicken", "strCategory": "Chicken", "strArea": "British",
+    "1": {"idMeal": "1", "strMeal": "Roast Chicken", "strCategory": "Chicken", "strArea": "British", "strMealThumb": "https://example.test/roast.jpg",
           "strInstructions": "STEP 1\r\nHeat the oven.\r\n\r\nSTEP 2\r\nRoast the chicken.",
           "strIngredient1": "Chicken", "strMeasure1": "1 1/2 kg", "strIngredient2": "", "strMeasure2": ""},
     "2": {"idMeal": "2", "strMeal": "Garlic Chicken", "strCategory": "Chicken", "strArea": None,
@@ -62,6 +62,7 @@ def test_empty_input_makes_no_calls(searcher: MealDbRecipeSearcher) -> None:
 def test_converts_meal_to_recipe(searcher: MealDbRecipeSearcher) -> None:
     recipe = searcher.search_by_ingredients(names("chicken"))[0]  # Roast Chicken (ties sort by id)
     assert recipe.source == "themealdb" and recipe.servings == 4
+    assert recipe.image_url == "https://example.test/roast.jpg"
     assert recipe.description == "British chicken recipe."
     assert recipe.calories is None and recipe.difficulty is None and recipe.spice_level is None
     assert [(s.step_number, s.instruction_text) for s in recipe.steps] == [(1, "Heat the oven."), (2, "Roast the chicken.")]
@@ -72,6 +73,7 @@ def test_one_paragraph_is_split_into_steps(searcher: MealDbRecipeSearcher) -> No
     recipe = searcher.search_by_ingredients(names("chicken", "garlic"))[0]  # Garlic Chicken
     assert [s.instruction_text for s in recipe.steps] == ["Fry the garlic.", "Add the chicken.", "Serve hot."]
     assert recipe.description == "A chicken recipe from Belgium."
+    assert recipe.image_url is None  # no strMealThumb in the data
 
 
 @pytest.mark.parametrize("measure, expected", [
@@ -100,6 +102,7 @@ def test_service_saves_results_and_scales(searcher: MealDbRecipeSearcher) -> Non
     assert service.get_recipe(recipe.recipe_id) is recipe
     doubled = service.scale_recipe(recipe, 8)
     assert doubled.servings == 8 and doubled.ingredients[0].quantity == 4.0
+    assert doubled.image_url == recipe.image_url
 
 
 def test_factory_rejects_unknown_api() -> None:

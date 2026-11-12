@@ -96,6 +96,7 @@ class MealDbRecipeSearcher(RecipeSearcher):
             title=(meal.get("strMeal") or "Untitled recipe").strip(),
             description=description,
             category=category,
+            image_url=(meal.get("strMealThumb") or "").strip() or None,
             source="themealdb",
             servings=DEFAULT_SERVINGS,
             calories=None,

@@ -13,32 +13,36 @@
     <a class="btn small ghostbtn back" href="index.html">&larr; Back to recipes</a>
   </header>
 
-  <main class="single">
+  <main class="single recipe-page">
     <p id="status" role="status">Loading recipe...</p>
 
     <article id="recipe" hidden>
-      <section class="panel hero">
-        <div class="hero-band"></div>
-        <div class="hero-body">
+      <!-- Top: picture on the left, name and category on the right -->
+      <section class="panel recipe-header">
+        <img id="image" class="recipe-image" alt="" hidden>
+        <div class="recipe-heading">
+          <p id="category" class="recipe-category" hidden></p>
           <h2 id="title"></h2>
-          <p id="description"></p>
+          <p id="description" class="recipe-description"></p>
           <ul class="meta" id="meta"></ul>
-          <p class="estimate">Recipes and calorie counts are AI-generated estimates. Always check ingredients for allergens.</p>
+          <p class="estimate" id="estimate"></p>
         </div>
       </section>
 
-      <div class="cols">
-        <section class="panel">
+      <!-- Below: ingredients on the left, steps on the right -->
+      <div class="recipe-cols">
+        <section class="panel ingredients-panel">
           <h2>Ingredients</h2>
           <div class="servings">
             <label for="servingsInput">Servings</label>
             <input type="number" id="servingsInput" min="1" max="100" value="2">
           </div>
-          <ul id="ingredients"></ul>
+          <ul id="ingredients" class="ingredient-list"></ul>
         </section>
-        <section class="panel">
-          <h2>Instructions</h2>
-          <ol id="steps"></ol>
+        <section class="panel steps-panel">
+          <h2>Steps</h2>
+          <p class="hint">Tap a step to check it off as you cook.</p>
+          <ol id="steps" class="step-list"></ol>
         </section>
       </div>
 

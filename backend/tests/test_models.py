@@ -23,7 +23,7 @@ def egg() -> Ingredient:
 @pytest.fixture
 def recipe(egg: Ingredient) -> Recipe:
     steps = [RecipeStep(1, "Crack the eggs."), RecipeStep(2, "Scramble them.")]
-    return Recipe("r1", "Scrambled Eggs", "Quick breakfast", "Breakfast",
+    return Recipe("r1", "Scrambled Eggs", "Quick breakfast", "Breakfast", None,
                   "ollama", 2, 180, 1, 1, [egg], steps)
 
 
@@ -36,14 +36,14 @@ def user(egg: Ingredient, recipe: Recipe) -> User:
 
 def test_recipe_holds_steps_and_ingredients(recipe: Recipe, egg: Ingredient) -> None:
     assert recipe.title == "Scrambled Eggs"
-    assert recipe.source == "ollama"
+    assert recipe.source == "ollama" and recipe.image_url is None
     assert recipe.ingredients == [egg]
     assert [s.step_number for s in recipe.steps] == [1, 2]
     assert recipe.steps[0].instruction_text == "Crack the eggs."
 
 
 def test_mealdb_recipe_allows_missing_values() -> None:
-    r = Recipe("r2", "Stew", "d", "Dinner", "themealdb", 4, None, None, None, [], [])
+    r = Recipe("r2", "Stew", "d", "Dinner", None, "themealdb", 4, None, None, None, [], [])
     assert r.calories is None and r.difficulty is None and r.spice_level is None
 
 
