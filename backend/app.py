@@ -7,36 +7,35 @@ from routes.recipes import recipes_bp
 # from routes.pantry import pantry_bp
 # from routes.profile import profile_bp
 
-def create_app():
-    app = Flask(__name__, static_folder= "../frontend", static_url_path ="")
-    app.config.from_object(Config)
-    CORS(app)
+class Application:
+    def __init__(self):
+        self.app = Flask(__name__, static_folder="../frontend", static_url_path="")
+        self.app.config.from_object(Config)
+        CORS(self.app)
 
-    missing = Config.missing_settings()
-    if missing:
-        print("Warning: missing settings in .env:", ", ".join(missing))
+        missing = Config.missing_settings()
+        if missing:
+            print("Warning: missing settings in .env:", ", ".join(missing))
 
-    # app.register_blueprint(auth_bp, url_prefix="/api/auth")
-    app.register_blueprint(recipes_bp, url_prefix= "/api/recipes")
-    # app.register_blueprint(pantry_bp, url_prefix="api/pantry")
-    # app.register_blueprint(profile_bp, url_prefix="api/profile")
+        self.app.register_blueprint(recipes_bp, url_prefix="/api/recipes")
+        self.app.add_url_rule("/", view_func=self.home)
+        self.app.register_error_handler(404, self.not_found)
+        self.app.register_error_handler(500, self.server_error)
 
-    @app.route("/")
-    def home():
-        return app.send_static_file("index.html")
+    def home(self):
+        return self.app.send_static_file("index.html")
 
-    @app.errorhandler(404)
-    def not_found(error):
+    def not_found(self, error):
         return jsonify({"error": "Not Found"}), 404
 
-    @app.errorhandler(500)
-    def server_error(error):
+    def server_error(self, error):
         return jsonify({"error": "Something went wrong on the server"}), 500
-    
 
-    return app
+    def create_app(self):
+        return self.app
 
-app = create_app()
+
+app = Application().create_app()
 
 if __name__== "__main__":
     app.run(debug = Config.DEBUG, port=Config.PORT)
