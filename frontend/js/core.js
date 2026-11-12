@@ -44,10 +44,10 @@ class ApiClient {
     }
 
     get(path, query) { return this.#request("GET", path, { query }); }
-    post(path, body) { return this.#request("POST", path, { body }); }
+    post(path, body, { timeoutMs } = {}) { return this.#request("POST", path, { body, timeoutMs }); }
     delete(path) { return this.#request("DELETE", path); }
 
-    async #request(method, path, { body, query } = {}) {
+    async #request(method, path, { body, query, timeoutMs = this.#timeoutMs } = {}) {
     const url = new URL(this.#baseUrl + path, window.location.origin);
     Object.entries(query || {}).forEach(([k, v]) => url.searchParams.set(k, v));
 
@@ -56,7 +56,7 @@ class ApiClient {
     if (Session.token) headers.Authorization = "Bearer " + Session.token;
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.#timeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     let response;
     try {

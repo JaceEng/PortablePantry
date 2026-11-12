@@ -72,7 +72,7 @@ The professor wanted two factories.
 ### Services
 
 - `RecommendationService`: `generateRecipes(query)`, `regenerateRecipes(query, shown)`
-- `RecipeService`: `searchRecipes(ingredients: List<Ingredient>)`, `filterRecipes(recipes, filters)`, `getRecipe(recipeId)`, `scaleRecipe(recipe, servings)`
+- `RecipeService`: `searchRecipes(ingredients: List<Ingredient>)`, `filterRecipes(recipes, filters)`, `refineResults(recipeIds, settings, pantry)`, `getRecipe(recipeId)`, `scaleRecipe(recipe, servings)`. Search results are filtered AFTER the search (like a shopping site): the search ignores filters, then `POST /api/recipes/refine` applies them to the returned recipes.
 - `UserRecipeService`: save, remove, rate, note, mark completed, share, get saved, get completed
 - `IngredientService`: add, remove, edit, get, mark and unmark favorite
 - `ProfileService`, `AuthService`, `AccountService`
@@ -110,9 +110,12 @@ Each factory has dashed «creates» arrows to its interface and to its concrete 
 - TheMealDB search works end to end: `sources/recipe_searcher.py` (`RecipeSearcher` ABC), `sources/meal_db_recipe_searcher.py`, `factories/api_factory.py`, `services/recipe_service.py`, and `GET /api/recipes/search?ingredients=a,b` in `routes/recipes.py`. `app.py` builds the objects and injects them. Verified against the live API: filter.php matches exact ingredient names only (so the searcher also tries the singular/plural form), and passing several ingredients in one call returns nothing on the free key. TheMealDB has no servings, so `DEFAULT_SERVINGS = 4`. Recipe ids are `mealdb-<idMeal>`.
 - `repositories/recipe_repository.py` is TEMPORARY in-memory storage with the final public methods. Swap its internals to Supabase once the tables exist.
 - Generation still uses the old `OllamaClient` + `DatabaseMngr`; `get_recipe` checks `RecipeService` first, then the legacy store.
+- All 8 filter classes and `FilterFactory` are done (`backend/filters/`, `factories/filter_factory.py`). Allergy and diet filters match ingredient names against keyword lists in `filters/food_groups.py` (whole words, plurals, exclusions such as "peanut butter" is not dairy), because there is no allergen data. Calorie, difficulty, and spice filters keep recipes with no value.
+- The page shows a "Filter results" panel above search results (category with counts, allergies, diets, max missing ingredients). The sidebar Filters panel only shapes Ollama generation.
+- `ollamaClient.py` now streams the reply (`stream: True`, 180 s limit between pieces instead of 120 s for the whole reply), keeps the model loaded (`keep_alive` 30m), caps tokens, asks for short recipes, and only requests the fields `Recipe` keeps. `OLLAMA_RECIPE_COUNT` (default 3) sets how many recipes per request. The frontend waits up to 10 minutes for Generate.
 - Tests live in `backend/tests/`. Run `pytest` from `backend/` (`pytest.ini` sets the import path).
 - `backend/services/databaseMngr.py` is a temporary in-memory dictionary and will be replaced by `DatabaseManager` and the repositories.
-- `backend/services/ollamaClient.py` has the pydantic schema, `build_prompt`, and `request_recipes`, with cuisine and cook time removed. It should be refactored into `OllamaRecipeGenerator`. Make `steps` and `ingredients` use `Field(min_length=1)` so empty lists trigger a retry.
+- `backend/services/ollamaClient.py` should still be refactored into `OllamaRecipeGenerator` (with `RecipeGeneratorFactory` and `RecommendationService`).
 - The older procedural `routes/*.py` and `frontend/index.html`, `login.html`, and `recipe.html` must be replaced or refactored to the controller/service design.
 
 ## Known fixes already applied

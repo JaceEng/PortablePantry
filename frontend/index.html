@@ -90,6 +90,7 @@
 
         <section class="panel" id="filtersPanel">
           <h2>Filters</h2>
+          <p class="hint">These shape AI-generated recipes. Search results get their own filters after you search.</p>
           <div class="grid">
             <label>Servings<input type="number" id="servings" min="1" value="2"></label>
             <label>Cook method<select id="cookMethod"></select></label>
@@ -130,6 +131,27 @@
             <button id="regenerateBtn" class="ghost" hidden>Regenerate</button>
           </div>
           <p id="status" role="status" hidden></p>
+          <section id="refine" class="panel refine" hidden aria-label="Filter search results">
+            <div class="refine-head">
+              <strong>Filter results</strong>
+              <span id="refineCount" class="refine-count"></span>
+              <button type="button" id="refineClear" class="link">Clear filters</button>
+            </div>
+            <div class="refine-group"><span class="refine-label">Category</span><div id="refineCategories" class="options"></div></div>
+            <div class="refine-group"><span class="refine-label">Leave out</span><div id="refineAllergies" class="options"></div></div>
+            <div class="refine-group"><span class="refine-label">Diet</span><div id="refineDiets" class="options"></div></div>
+            <div class="refine-group">
+              <label class="refine-label" for="refineMissing">Missing</label>
+              <select id="refineMissing" class="refine-select">
+                <option value="">Any number of ingredients I don't have</option>
+                <option value="0">None: I have everything</option>
+                <option value="1">At most 1 ingredient I don't have</option>
+                <option value="2">At most 2 ingredients I don't have</option>
+                <option value="3">At most 3 ingredients I don't have</option>
+                <option value="5">At most 5 ingredients I don't have</option>
+              </select>
+            </div>
+          </section>
           <div id="results"></div>
           <div class="placeholder">Add your ingredients, then choose Generate recipes (AI, slower) or Find recipes (fast).</div>
         </section>

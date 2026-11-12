@@ -3,6 +3,7 @@ from typing import Any, Dict
 from flask import request, jsonify, Blueprint
 
 from models.ingredient import Ingredient
+from models.pantry import Pantry
 from models.recipe import Recipe
 from services.ollamaClient import OllamaClient, OllamaError
 # from services.authService import AuthService
@@ -20,6 +21,7 @@ class RecipesController:
         self.ollamaClient = OllamaClient()
         self.blueprint.add_url_rule("/generate", endpoint="generate", view_func=self.generate, methods=["POST"])
         self.blueprint.add_url_rule("/search", endpoint="search", view_func=self.search, methods=["GET"])
+        self.blueprint.add_url_rule("/refine", endpoint="refine", view_func=self.refine, methods=["POST"])
         self.blueprint.add_url_rule("/<recipe_id>", endpoint="get_recipe", view_func=self.get_recipe, methods=["GET"])
 
     def error(self, message, status):
@@ -75,6 +77,24 @@ class RecipesController:
             recipes = self.recipe_service.search_recipes(ingredients)
         except RecipeSearchError as problem:
             return self.error(str(problem), 502)
+        return jsonify({"recipes": [self.to_json(r) for r in recipes]})
+
+    def refine(self):
+        """POST /api/recipes/refine
+        Body: {"recipeIds": [...], "ingredients": [...], "filters": {"categories": [...],
+               "allergies": [...], "dietaryRestrictions": [...], "maxMissing": 2}}
+        Filters recipes the search already returned."""
+        data = request.get_json(silent=True) or {}
+        recipe_ids = [str(i) for i in (data.get("recipeIds") or []) if str(i).strip()]
+        settings = data.get("filters") if isinstance(data.get("filters"), dict) else {}
+        names = [n.strip() for n in (data.get("ingredients") or []) if isinstance(n, str) and n.strip()]
+
+        # Until accounts exist, everyone is a guest: build a temporary pantry
+        # from the ingredients the page sends.
+        available = [Ingredient("", name, "", 0.0, "") for name in names]
+        pantry = Pantry(available, [], [], [], [], [])
+
+        recipes = self.recipe_service.refine_results(recipe_ids, settings, pantry)
         return jsonify({"recipes": [self.to_json(r) for r in recipes]})
 
     def get_recipe(self, recipe_id):
